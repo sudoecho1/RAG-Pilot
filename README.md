@@ -1,9 +1,17 @@
-# RAG Pilot
+<div align="center">
+  <img src="icon.png" alt="RAG Pilot Icon" width="200">
+  
+  # RAG Pilot
+  
+  [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue)](https://marketplace.visualstudio.com/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  
+  **Supercharge GitHub Copilot with Retrieval-Augmented Generation (RAG)**
+  
+  Give Copilot context from your workspace and any GitHub repository
+</div>
 
-[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue)](https://marketplace.visualstudio.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-> Supercharge GitHub Copilot with Retrieval-Augmented Generation (RAG) - Give Copilot context from your workspace and any GitHub repository.
+---
 
 RAG Pilot is a Visual Studio Code extension that enhances GitHub Copilot by adding semantic search capabilities. Index your codebase and external GitHub repositories, then ask Copilot questions with full context awareness.
 
