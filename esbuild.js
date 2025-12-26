@@ -13,7 +13,7 @@ async function main() {
 		sourcesContent: false,
 		platform: 'node',
 		outfile: 'dist/extension.js',
-		external: ['vscode', '@xenova/transformers', 'vectra', 'simple-git', 'onnxruntime-node'],
+		external: ['vscode'],
 		logLevel: 'silent',
 		loader: {
 			'.node': 'file'

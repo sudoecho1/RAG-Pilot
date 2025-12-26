@@ -2,7 +2,7 @@
   "name": "rag-pilot",
   "displayName": "RAG Pilot",
   "description": "Enables Copilot to use Retrieval-Augmented Generation with vector search",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "sudoecho",
   "icon": "icon.png",
   "repository": {
