@@ -4,6 +4,7 @@
   "description": "Enables Copilot to use Retrieval-Augmented Generation with vector search",
   "version": "0.0.1",
   "publisher": "sudoecho",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/sudoecho1/RAG-Pilot"
