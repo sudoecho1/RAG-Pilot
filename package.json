@@ -1,0 +1,183 @@
+{
+  "name": "rag-pilot",
+  "displayName": "RAG Pilot",
+  "description": "Enables Copilot to use Retrieval-Augmented Generation with vector search",
+  "version": "0.0.1",
+  "publisher": "sudoecho",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sudoecho1/RAG-Pilot"
+  },
+  "bugs": {
+    "url": "https://github.com/sudoecho1/RAG-Pilot/issues"
+  },
+  "homepage": "https://github.com/sudoecho1/RAG-Pilot#readme",
+  "keywords": [
+    "copilot",
+    "rag",
+    "ai",
+    "semantic-search",
+    "vector-search",
+    "embeddings",
+    "github",
+    "code-search"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "copilot-rag.assistant",
+        "name": "rag",
+        "description": "Ask questions with context from your workspace and indexed repos. Use @rag once, then it stays active (sticky mode).",
+        "isSticky": true
+      }
+    ],
+    "commands": [
+      {
+        "command": "copilot-rag.indexWorkspace",
+        "title": "RAG Pilot: Index Workspace for Vector Search"
+      },
+      {
+        "command": "copilot-rag.indexFolder",
+        "title": "RAG Pilot: Index Specific Folder"
+      },
+      {
+        "command": "copilot-rag.indexFiles",
+        "title": "RAG Pilot: Index Selected Files"
+      },
+      {
+        "command": "copilot-rag.addGitHubRepo",
+        "title": "RAG Pilot: Add GitHub Repository"
+      },
+      {
+        "command": "copilot-rag.listIndexedRepos",
+        "title": "RAG Pilot: List Indexed Sources"
+      },
+      {
+        "command": "copilot-rag.removeRepo",
+        "title": "RAG Pilot: Remove Repository from Index"
+      },
+      {
+        "command": "copilot-rag.clearIndex",
+        "title": "RAG Pilot: Clear Vector Index"
+      },
+      {
+        "command": "copilot-rag.openChat",
+        "title": "RAG Pilot: Open Chat"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "copilot-rag.openChat",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r"
+      }
+    ],
+    "configuration": {
+      "title": "Copilot RAG",
+      "properties": {
+        "copilot-rag.autoAttach": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically include RAG context in all chat requests (experimental)"
+        },
+        "copilot-rag.includePatterns": {
+          "type": "array",
+          "default": [
+            "**/*.ts",
+            "**/*.js",
+            "**/*.tsx",
+            "**/*.jsx",
+            "**/*.py",
+            "**/*.java",
+            "**/*.cpp",
+            "**/*.c",
+            "**/*.h",
+            "**/*.cs",
+            "**/*.go",
+            "**/*.rs",
+            "**/*.rb",
+            "**/*.php",
+            "**/*.swift",
+            "**/*.md",
+            "**/*.txt",
+            "**/*.json",
+            "**/*.yaml",
+            "**/*.yml"
+          ],
+          "description": "File patterns to include when indexing (glob patterns)"
+        },
+        "copilot-rag.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/.git/**",
+            "**/out/**",
+            "**/*.min.js",
+            "**/*.bundle.js"
+          ],
+          "description": "File patterns to exclude when indexing (glob patterns)"
+        }
+      }
+    },
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "copilot-rag.indexFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "2_workspace"
+        },
+        {
+          "command": "copilot-rag.indexFiles",
+          "when": "!explorerResourceIsFolder",
+          "group": "2_workspace"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.57.0",
+    "esbuild": "^0.20.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.1",
+    "vectra": "^0.9.0",
+    "simple-git": "^3.25.0",
+    "@octokit/rest": "^20.0.2"
+  }
+}
