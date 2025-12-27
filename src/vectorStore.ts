@@ -28,8 +28,14 @@ export class VectorStore {
             // Dynamically import the pipeline function
             const { pipeline } = await import('@xenova/transformers');
             
+            // Get embedding model from configuration
+            const config = vscode.workspace.getConfiguration('ragPilot');
+            const modelName = config.get<string>('embeddingModel') || 'Xenova/bge-base-en-v1.5';
+            
+            console.log(`Initializing embedding model: ${modelName}`);
+            
             // Initialize the embedding model
-            this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            this.embedder = await pipeline('feature-extraction', modelName);
             
             // Initialize or load existing index
             this.index = new LocalIndex(this.indexPath);
@@ -65,7 +71,7 @@ export class VectorStore {
         await this.index.beginUpdate();
 
         // Get patterns from configuration
-        const config = vscode.workspace.getConfiguration('copilot-rag');
+        const config = vscode.workspace.getConfiguration('ragPilot');
         const includePatterns = config.get<string[]>('includePatterns') || ['**/*.{ts,js,py,java,cpp,c,h,cs,go,rs,md,txt,json}'];
         const excludePatterns = config.get<string[]>('excludePatterns') || ['**/node_modules/**'];
 
@@ -257,21 +263,60 @@ export class VectorStore {
 
         await this.index.beginUpdate();
         
-        // Note: Vectra doesn't support filtering by metadata for deletion
-        // We need to rebuild the index without the repo's items
+        // Get all items and filter out the repo's items
         const allItems = await this.index.listItems();
+        const itemsToKeep = allItems.filter(item => {
+            const metadata = item.metadata as any;
+            return metadata.source !== 'github' || metadata.repo !== repoKey;
+        });
         
+        // Rebuild index
         await this.index.deleteIndex();
         await this.index.createIndex();
 
-        for (const item of allItems) {
-            const metadata = item.metadata as any;
-            if (metadata.source !== 'github' || metadata.repo !== repoKey) {
-                await this.index.insertItem(item);
-            }
+        // Add back items (without IDs to avoid conflicts)
+        for (const item of itemsToKeep) {
+            await this.index.insertItem({
+                vector: item.vector,
+                metadata: item.metadata
+            });
         }
 
         await this.index.endUpdate();
+    }
+
+    async removeFolderFromIndex(folderPath: string): Promise<void> {
+        if (!this.index) {
+            return;
+        }
+
+        await this.index.beginUpdate();
+        
+        // Get all items and filter out items from this folder
+        const allItems = await this.index.listItems();
+        const itemsToKeep = allItems.filter(item => {
+            const metadata = item.metadata as any;
+            // Keep items that don't have a file path or don't start with the folder path
+            return !metadata.file || !metadata.file.startsWith(folderPath);
+        });
+        
+        // Rebuild index
+        await this.index.deleteIndex();
+        await this.index.createIndex();
+
+        // Add back items (without IDs to avoid conflicts)
+        for (const item of itemsToKeep) {
+            await this.index.insertItem({
+                vector: item.vector,
+                metadata: item.metadata
+            });
+        }
+
+        await this.index.endUpdate();
+        
+        // Remove from indexed folders set
+        this.indexedFolders.delete(folderPath);
+        await this.saveIndexedFolders();
     }
 
     private async getFilesInDirectory(dir: string): Promise<string[]> {

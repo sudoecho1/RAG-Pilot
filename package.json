@@ -2,7 +2,7 @@
   "name": "rag-pilot",
   "displayName": "RAG Pilot",
   "description": "Enables Copilot to use Retrieval-Augmented Generation with vector search",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "publisher": "sudoecho",
   "icon": "icon.png",
   "repository": {
@@ -38,6 +38,7 @@
     "onCommand:copilot-rag.addGitHubRepo",
     "onCommand:copilot-rag.listIndexedRepos",
     "onCommand:copilot-rag.removeRepo",
+    "onCommand:copilot-rag.removeSource",
     "onCommand:copilot-rag.clearIndex",
     "onCommand:copilot-rag.openChat"
   ],
@@ -77,6 +78,10 @@
         "title": "RAG Pilot: Remove Repository from Index"
       },
       {
+        "command": "copilot-rag.removeSource",
+        "title": "RAG Pilot: Remove Indexed Source"
+      },
+      {
         "command": "copilot-rag.clearIndex",
         "title": "RAG Pilot: Clear Vector Index"
       },
@@ -93,14 +98,31 @@
       }
     ],
     "configuration": {
-      "title": "Copilot RAG",
+      "title": "RAG Pilot",
       "properties": {
-        "copilot-rag.autoAttach": {
+        "ragPilot.embeddingModel": {
+          "type": "string",
+          "enum": [
+            "Xenova/all-MiniLM-L6-v2",
+            "Xenova/bge-small-en-v1.5",
+            "Xenova/bge-base-en-v1.5",
+            "Xenova/all-mpnet-base-v2"
+          ],
+          "default": "Xenova/bge-base-en-v1.5",
+          "description": "Embedding model for vector search. Higher quality models are slower to index but provide better search results. Note: Changing this requires re-indexing your sources.",
+          "enumDescriptions": [
+            "all-MiniLM-L6-v2: Fastest option (384 dimensions, ~23MB). Good for large repos where speed matters. Decent quality but may miss nuanced matches.",
+            "bge-small-en-v1.5: Balanced option (384 dimensions, ~33MB). Better quality than MiniLM with similar speed. Good middle ground for most use cases.",
+            "bge-base-en-v1.5: Recommended (768 dimensions, ~130MB). State-of-the-art retrieval quality. Best for finding relevant context. 2x slower indexing but worth it for accuracy.",
+            "all-mpnet-base-v2: High quality alternative (768 dimensions, ~120MB). Well-established model with excellent accuracy. Slightly smaller than bge-base."
+          ]
+        },
+        "ragPilot.autoAttach": {
           "type": "boolean",
           "default": false,
           "description": "Automatically include RAG context in all chat requests (experimental)"
         },
-        "copilot-rag.includePatterns": {
+        "ragPilot.includePatterns": {
           "type": "array",
           "default": [
             "**/*.ts",
@@ -126,7 +148,7 @@
           ],
           "description": "File patterns to include when indexing (glob patterns)"
         },
-        "copilot-rag.excludePatterns": {
+        "ragPilot.excludePatterns": {
           "type": "array",
           "default": [
             "**/node_modules/**",

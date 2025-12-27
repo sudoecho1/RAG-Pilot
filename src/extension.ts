@@ -9,20 +9,27 @@ let chatParticipant: RagChatParticipant;
 let repoManager: GitHubRepoManager;
 
 export async function activate(context: vscode.ExtensionContext) {
+    console.log('=== RAG Pilot Extension Activating ===');
     console.log('Copilot RAG extension is now active');
 
     // Initialize GitHub repo manager
     repoManager = new GitHubRepoManager(context);
     await repoManager.initialize();
+    console.log('GitHub repo manager initialized');
 
     // Initialize vector store
     vectorStore = new VectorStore(context);
     await vectorStore.initialize();
+    console.log('Vector store initialized');
 
     // Register chat participant
     chatParticipant = new RagChatParticipant(vectorStore);
     const participant = vscode.chat.createChatParticipant('copilot-rag.assistant', chatParticipant.handleRequest.bind(chatParticipant));
     participant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'icon.png');
+    console.log('Chat participant registered with ID: copilot-rag.assistant, name: rag');
+    
+    // Discover and register custom prompts from .github/prompts/
+    await discoverAndRegisterCustomPrompts(participant);
     
     context.subscriptions.push(participant);
 
@@ -153,16 +160,22 @@ export async function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            const items: Array<{ label: string; description?: string; detail?: string }> = [];
+            interface SourceQuickPickItem extends vscode.QuickPickItem {
+                type?: 'folder' | 'repo' | 'header';
+                key?: string;
+            }
+
+            const items: SourceQuickPickItem[] = [];
 
             // Add workspace folders
             if (folders.length > 0) {
-                items.push({ label: '📁 Workspace Folders', description: '', detail: '' });
+                items.push({ label: '📁 Workspace Folders', type: 'header' });
                 folders.forEach(folder => {
                     items.push({
                         label: `  ${folder}`,
                         description: 'Workspace',
-                        detail: ''
+                        type: 'folder',
+                        key: folder
                     });
                 });
             }
@@ -170,22 +183,60 @@ export async function activate(context: vscode.ExtensionContext) {
             // Add GitHub repos
             if (repos.length > 0) {
                 if (items.length > 0) {
-                    items.push({ label: '', description: '', detail: '' }); // Spacer
+                    items.push({ label: '', type: 'header' }); // Spacer
                 }
-                items.push({ label: '📦 GitHub Repositories', description: '', detail: '' });
+                items.push({ label: '📦 GitHub Repositories', type: 'header' });
                 repos.forEach(repo => {
                     items.push({
                         label: `  ${repo.owner}/${repo.name}`,
                         description: `Indexed: ${repo.indexedAt.toLocaleDateString()}`,
-                        detail: repo.url
+                        detail: repo.url,
+                        type: 'repo',
+                        key: `${repo.owner}/${repo.name}`
                     });
                 });
             }
 
-            await vscode.window.showQuickPick(items, {
-                placeHolder: 'Indexed Sources',
+            const selected = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Indexed Sources (select one to view actions)',
                 canPickMany: false
             });
+
+            if (!selected || selected.type === 'header') {
+                return;
+            }
+
+            // Show actions for the selected source
+            const action = await vscode.window.showQuickPick([
+                { label: '🗑️  Remove from index', value: 'remove' },
+                { label: '↩️  Cancel', value: 'cancel' }
+            ], {
+                placeHolder: `Actions for ${selected.label.trim()}`
+            });
+
+            if (action?.value === 'remove') {
+                const confirm = await vscode.window.showWarningMessage(
+                    `Remove ${selected.label.trim()} from index?`,
+                    'Remove',
+                    'Cancel'
+                );
+
+                if (confirm === 'Remove') {
+                    try {
+                        if (selected.type === 'repo') {
+                            await vectorStore.removeRepoFromIndex(selected.key!);
+                            await repoManager.removeRepo(selected.key!);
+                        } else {
+                            await vectorStore.removeFolderFromIndex(selected.key!);
+                        }
+                        vscode.window.showInformationMessage('Source removed successfully!');
+                    } catch (error) {
+                        vscode.window.showErrorMessage(
+                            `Failed to remove source: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        );
+                    }
+                }
+            }
         })
     );
 
@@ -236,6 +287,80 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('copilot-rag.removeSource', async () => {
+            const repos = repoManager.getRepos();
+            const folders = vectorStore.getIndexedFolders();
+            
+            if (repos.length === 0 && folders.length === 0) {
+                vscode.window.showInformationMessage('No sources to remove.');
+                return;
+            }
+
+            interface SourceItem {
+                label: string;
+                description: string;
+                type: 'repo' | 'folder';
+                key: string;
+            }
+
+            const items: SourceItem[] = [];
+
+            // Add workspace folders
+            folders.forEach(folder => {
+                items.push({
+                    label: `📁 ${folder}`,
+                    description: 'Workspace folder',
+                    type: 'folder',
+                    key: folder
+                });
+            });
+
+            // Add GitHub repos
+            repos.forEach(repo => {
+                items.push({
+                    label: `📦 ${repo.owner}/${repo.name}`,
+                    description: 'GitHub repository',
+                    type: 'repo',
+                    key: `${repo.owner}/${repo.name}`
+                });
+            });
+
+            const selected = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Select source to remove from index',
+                canPickMany: false
+            });
+
+            if (!selected) {
+                return;
+            }
+
+            const confirm = await vscode.window.showWarningMessage(
+                `Remove ${selected.label} from index?`,
+                'Remove',
+                'Cancel'
+            );
+
+            if (confirm === 'Remove') {
+                try {
+                    if (selected.type === 'repo') {
+                        await vectorStore.removeRepoFromIndex(selected.key);
+                        await repoManager.removeRepo(selected.key);
+                    } else {
+                        await vectorStore.removeFolderFromIndex(selected.key);
+                    }
+                    vscode.window.showInformationMessage(
+                        `Source removed successfully!`
+                    );
+                } catch (error) {
+                    vscode.window.showErrorMessage(
+                        `Failed to remove source: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    );
+                }
+            }
+        })
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerCommand('copilot-rag.clearIndex', async () => {
             const confirm = await vscode.window.showWarningMessage(
                 'Clear all indexed data including GitHub repositories?',
@@ -260,3 +385,19 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+
+async function discoverAndRegisterCustomPrompts(participant: vscode.ChatParticipant): Promise<void> {
+    try {
+        // Find all .prompt.md files in .github/prompts/
+        const promptFiles = await vscode.workspace.findFiles('.github/prompts/*.prompt.md');
+        
+        console.log(`Found ${promptFiles.length} custom prompt files available for @rag slash commands`);
+        
+        for (const file of promptFiles) {
+            const commandName = path.basename(file.fsPath, '.prompt.md');
+            console.log(`Custom prompt available: /${commandName}`);
+        }
+    } catch (error) {
+        console.log('Error discovering custom prompts:', error);
+    }
+}
