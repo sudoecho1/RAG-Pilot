@@ -1,5 +1,7 @@
 # RAG Pilot
 
+![RAG Pilot Icon](icon.png)
+
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue)](https://marketplace.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

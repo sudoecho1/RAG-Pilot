@@ -22,6 +22,22 @@ export async function activate(context: vscode.ExtensionContext) {
     await vectorStore.initialize();
     console.log('Vector store initialized');
 
+    // Watch for embedding model changes
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('ragPilot.embeddingModel')) {
+                vscode.window.showWarningMessage(
+                    'Embedding model changed. Please reload the window and re-index your sources.',
+                    'Reload Window'
+                ).then(selection => {
+                    if (selection === 'Reload Window') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    }
+                });
+            }
+        })
+    );
+
     // Register chat participant
     chatParticipant = new RagChatParticipant(vectorStore);
     const participant = vscode.chat.createChatParticipant('copilot-rag.assistant', chatParticipant.handleRequest.bind(chatParticipant));
