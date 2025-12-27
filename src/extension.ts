@@ -237,8 +237,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('copilot-rag.clearIndex', async () => {
-            await vectorStore.clearIndex();
-            vscode.window.showInformationMessage('Vector index cleared!');
+            const confirm = await vscode.window.showWarningMessage(
+                'Clear all indexed data including GitHub repositories?',
+                'Clear All',
+                'Cancel'
+            );
+
+            if (confirm === 'Clear All') {
+                await vectorStore.clearIndex();
+                await repoManager.clearAll();
+                vscode.window.showInformationMessage('Vector index and all repositories cleared!');
+            }
         })
     );
 

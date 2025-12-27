@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="icon.png" alt="RAG Pilot Icon" width="200">
+  <img src="icon.png" alt="RAG Pilot Icon" width="1024">
   
   # RAG Pilot
   

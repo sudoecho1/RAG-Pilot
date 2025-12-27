@@ -2,7 +2,7 @@
   "name": "rag-pilot",
   "displayName": "RAG Pilot",
   "description": "Enables Copilot to use Retrieval-Augmented Generation with vector search",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "publisher": "sudoecho",
   "icon": "icon.png",
   "repository": {
@@ -31,7 +31,15 @@
     "Chat"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:copilot-rag.indexWorkspace",
+    "onCommand:copilot-rag.indexFolder",
+    "onCommand:copilot-rag.indexFiles",
+    "onCommand:copilot-rag.addGitHubRepo",
+    "onCommand:copilot-rag.listIndexedRepos",
+    "onCommand:copilot-rag.removeRepo",
+    "onCommand:copilot-rag.clearIndex",
+    "onCommand:copilot-rag.openChat"
   ],
   "main": "./dist/extension.js",
   "contributes": {

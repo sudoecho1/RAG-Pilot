@@ -122,6 +122,20 @@ export class GitHubRepoManager {
         await this.saveReposMetadata();
     }
 
+    async clearAll(): Promise<void> {
+        // Delete all repository directories
+        try {
+            await fs.rm(this.reposPath, { recursive: true, force: true });
+            await fs.mkdir(this.reposPath, { recursive: true });
+        } catch (error) {
+            console.error('Error clearing repos directory:', error);
+        }
+
+        // Clear metadata
+        this.repos.clear();
+        await this.saveReposMetadata();
+    }
+
     getRepos(): RepoInfo[] {
         return Array.from(this.repos.values());
     }
